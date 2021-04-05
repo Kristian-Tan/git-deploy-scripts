@@ -1,0 +1,4 @@
+git clone https://github.com/Kristian-Tan/git-deploy-scripts.git
+cd git-deploy-scripts
+sudo bash install.sh
+rm -rf ../git-deploy-scripts
