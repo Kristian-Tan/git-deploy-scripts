@@ -33,7 +33,6 @@ usage: -s server_ssh_destination -d directory_in_deployment_server [-t target_re
   -n name_of_remote_git = name of 'git remote' URL from where we should clone, default to 'origin'
   -b branch_target = name of target branch, default to 'master'
   -c = configure_receive_denycurrentbranch_updateinstead flag, please set it for first time (no harm to set it in subsequent deploys), see https://stackoverflow.com/a/34698361/3706717 or http://databio.org/posts/push_to_deploy.html or https://www.gloomycorner.com/pushing-to-a-non-bare-git-repository/"
-#echo "  -x = run 'git reset --hard HEAD' after deployment in order to rollback if there's any conflict
   -w wait_seconds = waiting for ... seconds before executing (default to 5), if you're sure about the operation then just set it to 0
   -v = verbose
 example 1: -s produser@production.server.com -d /home/vhost/myapp -t ~/repo/myapp -b production -c -w 0 -v
