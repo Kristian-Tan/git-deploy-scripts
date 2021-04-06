@@ -17,11 +17,12 @@ post_command_7=""
 post_command_8=""
 post_command_9=""
 x_resethead_after=""
+options_for_ssh=() # array, see https://stackoverflow.com/a/20761893/3706717
 wait_seconds=5
 verbose=0
 
 # read arguments from getopts https://wiki.bash-hackers.org/howto/getopts_tutorial https://stackoverflow.com/a/14203146/3706717
-while getopts "hs:d:n:b:1:2:3:4:5:6:7:8:9:xw:v" opt; do
+while getopts "hs:d:n:b:1:2:3:4:5:6:7:8:9:xo:w:v" opt; do
     case "$opt" in
     h)
         cat << EOF
@@ -29,12 +30,13 @@ requirement:
   local computer: installed ssh-client,
   deployment server: installed ssh-server, ssh-client, git,
   deployment server: must be able to reach remote git (ex: github/bitbucket/gitlab) from network,
-usage: -s server_ssh_destination -d directory_in_deployment_server [-n name_of_remote_git] [-b branch_target] [-x] [-w wait_seconds] [-v]
+usage: -s server_ssh_destination -d directory_in_deployment_server [-n name_of_remote_git] [-b branch_target] [-x] [-o options_for_ssh] [-w wait_seconds] [-v]
   -s server_ssh_destination = qualified ssh destination (ex: 'produser@production.server.com')
   -d directory_in_deployment_server = path/name of directory in deployment server (ex: '/var/www/html')
   -n name_of_remote_git = name of 'git remote' URL from where we should clone, default to 'origin'
   -b branch_target = name of target branch, default to 'master'
   -x = run 'git reset --hard HEAD' after deployment in order to rollback if there's any conflict
+  -o options_for_ssh = (array) additional options for ssh (ex: '-o Port=2222 -o StrictHostKeyChecking=no')
   -w wait_seconds = waiting for ... seconds before executing (default to 5), if you're sure about the operation then just set it to 0
   -v = verbose
 additional command:
@@ -71,6 +73,8 @@ EOF
     9)  post_command_9=$OPTARG
         ;;
     x)  x_resethead_after=" git reset --hard HEAD ; "
+        ;;
+    o)  options_for_ssh+=("$OPTARG")
         ;;
     w)  wait_seconds=$OPTARG
         ;;
@@ -129,6 +133,13 @@ if test "$post_command_9" != ""; then
   post_command_9=" $post_command_9 ; "
 fi
 
+verbose_output "parsing ssh options"
+options_for_ssh_string=""
+for val in "${options_for_ssh[@]}"; do
+    options_for_ssh_string="$options_for_ssh_string -o '$val'"
+done
+verbose_output "ssh options: \"$options_for_ssh_string\""
+
 # show to user
 verbose_output "server_ssh_destination: '$server_ssh_destination'"
 verbose_output "directory_in_deployment_server: '$directory_in_deployment_server'"
@@ -142,4 +153,4 @@ echo ">>> executing..."
 
 verbose_output "executing ssh command"
 verbose_output "  \$ ssh $server_ssh_destination -t \"$pre_command_1$pre_command_2$pre_command_3$pre_command_4$pre_command_5 cd $directory_in_deployment_server ; git pull $name_of_remote_git $branch_target ; $post_command_6$post_command_7$post_command_8$post_command_9$x_resethead_after\""
-ssh $server_ssh_destination -t "$pre_command_1$pre_command_2$pre_command_3$pre_command_4$pre_command_5 cd $directory_in_deployment_server ; git pull $name_of_remote_git $branch_target ; $post_command_6$post_command_7$post_command_8$post_command_9$x_resethead_after"
+ssh $options_for_ssh_string $server_ssh_destination -t "$pre_command_1$pre_command_2$pre_command_3$pre_command_4$pre_command_5 cd $directory_in_deployment_server ; git pull $name_of_remote_git $branch_target ; $post_command_6$post_command_7$post_command_8$post_command_9$x_resethead_after"

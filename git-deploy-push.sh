@@ -12,11 +12,12 @@ name_of_remote_git="origin"
 branch_target="master"
 configure_receive_denycurrentbranch_updateinstead=0
 #x_resethead_after=""
+options_for_ssh=() # array, see https://stackoverflow.com/a/20761893/3706717
 wait_seconds=5
 verbose=0
 
 # read arguments from getopts https://wiki.bash-hackers.org/howto/getopts_tutorial https://stackoverflow.com/a/14203146/3706717
-while getopts "hs:d:t:r:fn:b:cw:v" opt; do
+while getopts "hs:d:t:r:fn:b:co:w:v" opt; do
     case "$opt" in
     h)
         cat << EOF
@@ -24,7 +25,7 @@ requirement:
   local computer: installed ssh-client, git (minimum version v2.4.0+),
   local computer: must be able to reach remote git (ex: github/bitbucket/gitlab) from network,
   deployment server: installed ssh-server, ssh-client, git (minimum version v2.4.0+),
-usage: -s server_ssh_destination -d directory_in_deployment_server [-t target_repository] [-r remote_repository] [-f] [-n name_of_remote_git] [-b branch_target] [-c] [-w wait_seconds] [-v]
+usage: -s server_ssh_destination -d directory_in_deployment_server [-t target_repository] [-r remote_repository] [-f] [-n name_of_remote_git] [-b branch_target] [-c] [-o options_for_ssh] [-w wait_seconds] [-v]
   -s server_ssh_destination = qualified ssh destination (ex: 'produser@production.server.com')
   -d directory_in_deployment_server = path/name of directory in deployment server (ex: '/var/www/html')
   -t target_repository = path to repository in local computer, default to current directory
@@ -33,6 +34,7 @@ usage: -s server_ssh_destination -d directory_in_deployment_server [-t target_re
   -n name_of_remote_git = name of 'git remote' URL from where we should clone, default to 'origin'
   -b branch_target = name of target branch, default to 'master'
   -c = configure_receive_denycurrentbranch_updateinstead flag, please set it for first time (no harm to set it in subsequent deploys), see https://stackoverflow.com/a/34698361/3706717 or http://databio.org/posts/push_to_deploy.html or https://www.gloomycorner.com/pushing-to-a-non-bare-git-repository/"
+  -o options_for_ssh = (array) additional options for ssh (ex: '-o Port=2222 -o StrictHostKeyChecking=no')
   -w wait_seconds = waiting for ... seconds before executing (default to 5), if you're sure about the operation then just set it to 0
   -v = verbose
 example 1: -s produser@production.server.com -d /home/vhost/myapp -t ~/repo/myapp -b production -c -w 0 -v
@@ -73,6 +75,8 @@ EOF
         ;;
     #x)  x_resethead_after=" git reset --hard HEAD ; "
     #    ;;
+    o)  options_for_ssh+=("$OPTARG")
+        ;;
     w)  wait_seconds=$OPTARG
         ;;
     v)  verbose=1
@@ -108,6 +112,13 @@ if test ! -d "$target_repository"; then
   echo ">>> mkdir '$target_repository'"
   exit 3
 fi
+
+verbose_output "parsing ssh options"
+options_for_ssh_string=""
+for val in "${options_for_ssh[@]}"; do
+    options_for_ssh_string="$options_for_ssh_string -o '$val'"
+done
+verbose_output "ssh options: \"$options_for_ssh_string\""
 
 # show to user
 verbose_output "server_ssh_destination: '$server_ssh_destination'"
@@ -156,7 +167,7 @@ git pull $name_of_remote_git $branch_target
 if test $configure_receive_denycurrentbranch_updateinstead -eq 1; then
   verbose_output "configuring production git repository to allow it to receive 'git push'"
   verbose_output "  \$ ssh $server_ssh_destination -t \"cd $directory_in_deployment_server ; git config receive.denyCurrentBranch updateInstead ; cat .git/config | grep denyCurrentBranch\""
-  ssh $server_ssh_destination -t "cd $directory_in_deployment_server ; git config receive.denyCurrentBranch updateInstead ; cat .git/config | grep denyCurrentBranch"
+  ssh $options_for_ssh_string $server_ssh_destination -t "cd $directory_in_deployment_server ; git config receive.denyCurrentBranch updateInstead ; cat .git/config | grep denyCurrentBranch"
 fi
 
 if test $force_flag -eq 0; then
