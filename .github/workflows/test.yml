@@ -1,0 +1,72 @@
+# This is a basic workflow to help you get started with Actions
+
+name: test
+
+on:
+  push:
+    branches: [ master, development, dev* ]
+  pull_request:
+    branches: [ master, development, dev* ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      deployment-server-dummy:
+        image: jdeathe/centos-ssh-apache-php
+        ports:
+          - 8080:80
+          - 2222:22
+        options: >-
+          --env "APACHE_SERVER_NAME=app-1.local"
+          --env "ENABLE_SSHD_BOOTSTRAP=true"
+          --env "ENABLE_SSHD_WRAPPER=true"
+          --env "SSH_AUTHORIZED_KEYS=ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQColHehDuwOKdYWWsvbcQir7wvfRCPIdppcE8Tz0Xao8HLGizphl+7tJ+mrbx1EKW2jO1ZFOtfszA81/aDACy/i8iL0ukIIrDvEggAtuFXwA1UK+PPqjsb9XnIF+TVIh/TS1E2aFftYMEVDMWHpJHJtaPOSt9gAPZi/UPdOZUn0VixEjDJcIi4kSDivJVO6N9K3xEiN9DS7OCC0Og+OHl61TFMi7K79vFLfgVJenjDGNNAMFQGIRcD8yJZQPL1qgjxuUIwHXKlOdZ2MM0Ltx7+kZR4WFZ1Kk1gfyLFDzXny5gctISqmDa+WYnN7IJIMWNz7RdxWYCk5yVUC/Ht9Fq2N/Eo0IwEXJeEOJnpFAMFqWQNQf7wDrsR2WpJuVYv+fGEwxocgxF1jyNnWtEQqv+a6oYSq4x9pEve++HOwXV/pLJMR76gE9Un0RcedHqkeVedpyZjBVLI2cbAA4Hx+WuPsN/ENS72RS0XMPszw896SyyFyMzY5EGS1mWQDe27Zxg/GuwfLTXttRxdNZ2TPruR2s1SmLwVYy6gzTK9+zuX4R5xx5Kg3gp6osNS3pTN4YU/2aZWZlq2Cckjpn+RZgnukBKetOo2tXvdnqI4+/oS1xOPo44zP93c7sU7huVHPv+kgABZK1ac3rCGsDn/B3PFFXU0zRKlFYxwxksSmsFgM9w== any label here\n"
+          --env "SSH_PASSWORD_AUTHENTICATION=true"
+          --env "SSH_USER=kristian"
+          --env "SSH_USER_PASSWORD=123"
+          --env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL"
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run a multi-line script
+        run: |
+          initial_directory_path="`pwd`"
+          cd "$initial_directory_path"
+
+
+
+          echo "installing with one-line curl"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Kristian-Tan/git-deploy-scripts/HEAD/get)"
+          git-deploy-push -h
+          git-deploy-sshfs -h
+          git-deploy-sshpull -h
+
+          cd "$initial_directory_path"
+          echo "uninstalling from /bin (default location if not set)"
+          sudo sh uninstall.sh
+
+          echo "installing to /bin (default location if not set)"
+          echo "after installation, scripts will be called directly (not with ./filename but filename)"
+          sudo sh install.sh
+
+
+          mkdir ~/.ssh
+          echo "Host *" > ~/.ssh/config
+          echo "  GSSAPIAuthentication no" >> ~/.ssh/config
+          eval $(ssh-agent -s)
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
+          echo "${{ secrets.SSH_PUBLIC_KEY }}"
+          echo "my public key:"
+          cat ~/.ssh/id_rsa.pub
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' | ssh-add -
+          ssh -p 2222 kristian@127.0.0.1
+
+
+          cd "$initial_directory_path"
+          echo "uninstalling from /bin (default location if not set)"
+          sudo sh uninstall.sh
+
