@@ -136,7 +136,7 @@ fi
 verbose_output "parsing ssh options"
 options_for_ssh_string=""
 for val in "${options_for_ssh[@]}"; do
-    options_for_ssh_string="$options_for_ssh_string -o '$val'"
+    options_for_ssh_string="$options_for_ssh_string -o $val"
 done
 verbose_output "ssh options: \"$options_for_ssh_string\""
 
@@ -152,5 +152,5 @@ sleep $wait_seconds
 echo ">>> executing..."
 
 verbose_output "executing ssh command"
-verbose_output "  \$ ssh $server_ssh_destination -t \"$pre_command_1$pre_command_2$pre_command_3$pre_command_4$pre_command_5 cd $directory_in_deployment_server ; git pull $name_of_remote_git $branch_target ; $post_command_6$post_command_7$post_command_8$post_command_9$x_resethead_after\""
+verbose_output "  \$ ssh $options_for_ssh_string $server_ssh_destination -t \"$pre_command_1$pre_command_2$pre_command_3$pre_command_4$pre_command_5 cd $directory_in_deployment_server ; git pull $name_of_remote_git $branch_target ; $post_command_6$post_command_7$post_command_8$post_command_9$x_resethead_after\""
 ssh $options_for_ssh_string $server_ssh_destination -t "$pre_command_1$pre_command_2$pre_command_3$pre_command_4$pre_command_5 cd $directory_in_deployment_server ; git pull $name_of_remote_git $branch_target ; $post_command_6$post_command_7$post_command_8$post_command_9$x_resethead_after"

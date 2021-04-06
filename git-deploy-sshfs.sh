@@ -85,9 +85,9 @@ if test "$mountpoint_directory" = ""; then
 fi
 
 verbose_output "parsing sshfs options"
-options_for_sshfs_string=""
+options_for_sshfs_string="-o allow_other"
 for val in "${options_for_sshfs[@]}"; do
-    options_for_sshfs_string="$options_for_sshfs_string -o '$val'"
+    options_for_sshfs_string="$options_for_sshfs_string,$val"
 done
 verbose_output "sshfs options: \"$options_for_sshfs_string\""
 
@@ -104,8 +104,8 @@ sleep $wait_seconds
 echo ">>> executing..."
 
 verbose_output "mounting sshfs"
-verbose_output "  \$ sshfs -o allow_other $server_ssh_destination:$directory_in_deployment_server \"$mountpoint_directory\""
-sshfs -o allow_other $options_for_sshfs_string $server_ssh_destination:$directory_in_deployment_server "$mountpoint_directory"
+verbose_output "  \$ sshfs $options_for_sshfs_string $server_ssh_destination:$directory_in_deployment_server \"$mountpoint_directory\""
+sshfs $options_for_sshfs_string $server_ssh_destination:$directory_in_deployment_server "$mountpoint_directory"
 
 verbose_output "change directory to repository in mounted remote filesystem"
 verbose_output "  \$ cd \"$mountpoint_directory\""
@@ -126,5 +126,5 @@ verbose_output "  \$ cd ~"
 cd ~
 
 verbose_output "unmounting sshfs"
-verbose_output "  \$ fusermount -u $mountpoint_directory"
-fusermount -u $mountpoint_directory
+verbose_output "  \$ fusermount -u $mountpoint_directory || true"
+fusermount -u $mountpoint_directory || true

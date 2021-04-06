@@ -52,18 +52,184 @@ jobs:
           echo "after installation, scripts will be called directly (not with ./filename but filename)"
           sudo sh install.sh
 
-
+          echo "setting up ssh and attempt to connect to dummy 'deployment server' created from jdeathe/centos-ssh-apache-php docker image"
           mkdir ~/.ssh
           echo "Host *" > ~/.ssh/config
-          echo "  GSSAPIAuthentication no" >> ~/.ssh/config
-          eval $(ssh-agent -s)
+          echo "  GSSAPIAuthentication=no" >> ~/.ssh/config
+          echo "  StrictHostKeyChecking=no" >> ~/.ssh/config
+          echo "  UserKnownHostsFile=/dev/null" >> ~/.ssh/config
+          echo "  IdentityFile=~/.ssh/id_rsa" >> ~/.ssh/config
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
           echo "${{ secrets.SSH_PUBLIC_KEY }}"
           echo "my public key:"
           cat ~/.ssh/id_rsa.pub
+          chmod 0700 ~/.ssh/id_rsa
+          chmod 0700 ~/.ssh/id_rsa.pub
+          eval $(ssh-agent -s)
           echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' | ssh-add -
-          ssh -p 2222 kristian@127.0.0.1
+          ssh-add ~/.ssh/id_rsa
+          ssh -o Port=2222 -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa kristian@127.0.0.1 -t "sudo chmod -R 777 /var/www/app/ ; sudo chmod -R 777 /var/www/app/public_html ; sudo chown -R kristian:app-www /var/www/app/public_html"
+          git --version
+
+          echo "installing sshfs"
+          sudo apt install sshfs
+          # sudo echo "user_allow_other" >> /etc/fuse.conf
+          # sudo bash -c 'echo "user_allow_other" >> /etc/fuse.conf'
+          echo "user_allow_other" | sudo tee -a /etc/fuse.conf
+
+          echo "installing git in 'deployment server' (before that, install endpoint repo to get latest git version instead of 1.8.3.1)"
+          ssh -o Port=2222 -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa kristian@127.0.0.1 -t "sudo yum -y install https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.7-1.x86_64.rpm"
+          ssh -o Port=2222 -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa kristian@127.0.0.1 -t "sudo yum -y install git"
+          ssh -o Port=2222 -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa kristian@127.0.0.1 -t "git --version"
+
+          echo "cloning latest version"
+          mkdir /tmp/mytest
+          cd /tmp/mytest
+          mkdir /tmp/mytest/git-deploy-scripts-testinghelper-latest
+          git clone https://github.com/Kristian-Tan/git-deploy-scripts-testinghelper.git git-deploy-scripts-testinghelper-latest
+          response_test_latest="`cat git-deploy-scripts-testinghelper-latest/version.json`"
+          echo "latest version: $response_test_latest"
+
+          echo "making directories in 'deployment server' for each test case, each initialized as git repository"
+          echo "  clone to local directory"
+          mkdir /tmp/mytest/git-deploy-scripts-testinghelper
+          cd /tmp/mytest/git-deploy-scripts-testinghelper
+          git clone https://github.com/Kristian-Tan/git-deploy-scripts-testinghelper.git .
+          echo "  run git reset --hard HEAD~2 to make 'outdated' repository (make it two commit behind latest master)"
+          git reset --hard HEAD~2
+          response_test_outdated="`cat version.json`"
+          echo "outdated version: $response_test_outdated"
+          cd /tmp/mytest
+
+          cp -r git-deploy-scripts-testinghelper git-deploy-scripts-testinghelper-1
+          scp -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa -o Port=2222 -r git-deploy-scripts-testinghelper kristian@127.0.0.1:/var/www/app/public_html/git-deploy-scripts-testinghelper-1
+          response_test_1=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-1/version.json`
+          echo "$response_test_1"
+          if test "$response_test_1" != "$response_test_outdated"; then
+            echo "failed asserting version.json for git-deploy-scripts-testinghelper-1"
+            exit 201
+          fi
+          
+          cp -r git-deploy-scripts-testinghelper git-deploy-scripts-testinghelper-2
+          scp -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa -o Port=2222 -r git-deploy-scripts-testinghelper kristian@127.0.0.1:/var/www/app/public_html/git-deploy-scripts-testinghelper-2
+          response_test_2=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-2/version.json`
+          echo "$response_test_2"
+          if test "$response_test_2" != "$response_test_outdated"; then
+            echo "failed asserting version.json for git-deploy-scripts-testinghelper-2"
+            exit 202
+          fi
+          
+          cp -r git-deploy-scripts-testinghelper git-deploy-scripts-testinghelper-3
+          scp -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa -o Port=2222 -r git-deploy-scripts-testinghelper kristian@127.0.0.1:/var/www/app/public_html/git-deploy-scripts-testinghelper-3
+          response_test_3=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-3/version.json`
+          echo "$response_test_3"
+          if test "$response_test_3" != "$response_test_outdated"; then
+            echo "failed asserting version.json for git-deploy-scripts-testinghelper-3"
+            exit 203
+          fi
+          
+          cp -r git-deploy-scripts-testinghelper git-deploy-scripts-testinghelper-4
+          scp -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa -o Port=2222 -r git-deploy-scripts-testinghelper kristian@127.0.0.1:/var/www/app/public_html/git-deploy-scripts-testinghelper-4
+          response_test_4=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-4/version.json`
+          echo "$response_test_4"
+          if test "$response_test_4" != "$response_test_outdated"; then
+            echo "failed asserting version.json for git-deploy-scripts-testinghelper-4"
+            exit 204
+          fi
+          
+          cp -r git-deploy-scripts-testinghelper git-deploy-scripts-testinghelper-5
+          scp -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa -o Port=2222 -r git-deploy-scripts-testinghelper kristian@127.0.0.1:/var/www/app/public_html/git-deploy-scripts-testinghelper-5
+          response_test_5=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-5/version.json`
+          echo "$response_test_5"
+          if test "$response_test_5" != "$response_test_outdated"; then
+            echo "failed asserting version.json for git-deploy-scripts-testinghelper-5"
+            exit 205
+          fi
+          
+          cp -r git-deploy-scripts-testinghelper git-deploy-scripts-testinghelper-6
+          scp -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa -o Port=2222 -r git-deploy-scripts-testinghelper kristian@127.0.0.1:/var/www/app/public_html/git-deploy-scripts-testinghelper-6
+          response_test_6=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-6/version.json`
+          echo "$response_test_6"
+          if test "$response_test_6" != "$response_test_outdated"; then
+            echo "failed asserting version.json for git-deploy-scripts-testinghelper-6"
+            exit 206
+          fi
+
+          echo "test case 5: git-deploy-sshfs"
+          mkdir "/tmp/mytest/git-deploy-scripts-testinghelper-5-temp"
+          cd "/tmp/mytest/git-deploy-scripts-testinghelper-5"
+          sudo git-deploy-sshfs -s kristian@127.0.0.1 -d /var/www/app/public_html/git-deploy-scripts-testinghelper-5 -m "/tmp/mytest/git-deploy-scripts-testinghelper-5-temp" -o IdentityFile=~/.ssh/id_rsa -o port=2222 -o reconnect -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o ssh_command=ssh\\040-o\\040StrictHostKeyChecking=no -w 0 -v
+
+          response_test_5_after=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-5/version.json`
+          echo "$response_test_5_after"
+          if test "$response_test_5_after" != "$response_test_latest"; then
+            echo "failed asserting version.json after update for git-deploy-scripts-testinghelper-5"
+            exit 206
+          fi
+
+          echo "test case 6: git-deploy-sshfs without local repository"
+          mkdir "/tmp/mytest/git-deploy-scripts-testinghelper-6-temp"
+          sudo git-deploy-sshfs -s kristian@127.0.0.1 -d /var/www/app/public_html/git-deploy-scripts-testinghelper-6 -m "/tmp/mytest/git-deploy-scripts-testinghelper-6-temp" -o IdentityFile=~/.ssh/id_rsa -o port=2222 -o reconnect -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o ssh_command=ssh\\040-o\\040StrictHostKeyChecking=no -w 0 -v -n https://github.com/Kristian-Tan/git-deploy-scripts-testinghelper.git
+
+          response_test_6_after=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-6/version.json`
+          echo "$response_test_6_after"
+          if test "$response_test_6_after" != "$response_test_latest"; then
+            echo "failed asserting version.json after update for git-deploy-scripts-testinghelper-6"
+            exit 206
+          fi
+
+          echo "test case 3: git-deploy-sshpull"
+          cd "/tmp/mytest/git-deploy-scripts-testinghelper-3"
+          git-deploy-sshpull -s kristian@127.0.0.1 -d /var/www/app/public_html/git-deploy-scripts-testinghelper-3 -c -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa -o Port=2222 -w 0 -v
+
+          response_test_3_after=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-3/version.json`
+          echo "$response_test_3_after"
+          if test "$response_test_3_after" != "$response_test_latest"; then
+            echo "failed asserting version.json after update for git-deploy-scripts-testinghelper-3"
+            exit 206
+          fi
+
+          echo "test case 4: git-deploy-sshpull without local repository"
+          mkdir "/tmp/mytest/git-deploy-scripts-testinghelper-4-temp"
+          cd "/tmp/mytest/git-deploy-scripts-testinghelper-4-temp"
+          git-deploy-sshpull -s kristian@127.0.0.1 -d /var/www/app/public_html/git-deploy-scripts-testinghelper-4 -c -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa -o Port=2222 -w 0 -v -n https://github.com/Kristian-Tan/git-deploy-scripts-testinghelper.git
+
+          response_test_4_after=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-4/version.json`
+          echo "$response_test_4_after"
+          if test "$response_test_4_after" != "$response_test_latest"; then
+            echo "failed asserting version.json after update for git-deploy-scripts-testinghelper-4"
+            exit 206
+          fi
+
+          echo "test case 1: git-deploy-push with local repository"
+          cd "/tmp/mytest/git-deploy-scripts-testinghelper-1"
+          git config --unset core.sshCommand || true
+          git pull origin master
+          git config core.sshCommand "ssh -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa -o Port=2222"
+          git-deploy-push -s kristian@127.0.0.1 -d /var/www/app/public_html/git-deploy-scripts-testinghelper-1 -c -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa -o Port=2222 -w 0 -v
+          git config --unset core.sshCommand || true
+
+          response_test_1_after=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-1/version.json`
+          echo "$response_test_1_after"
+          if test "$response_test_1_after" != "$response_test_latest"; then
+            echo "failed asserting version.json after update for git-deploy-scripts-testinghelper-1"
+            exit 206
+          fi
+
+          echo "test case 2: git-deploy-push without local repository"
+          mkdir "/tmp/mytest/git-deploy-scripts-testinghelper-2-temp"
+          cd "/tmp/mytest/git-deploy-scripts-testinghelper-2-temp"
+          git config --global core.sshCommand "ssh -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa -o Port=2222"
+          git-deploy-push -s kristian@127.0.0.1 -d /var/www/app/public_html/git-deploy-scripts-testinghelper-2 -c -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa -o Port=2222 -w 0 -v -r https://github.com/Kristian-Tan/git-deploy-scripts-testinghelper.git
+          git config --unset --global core.sshCommand || true
+
+          response_test_2_after=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-2/version.json`
+          echo "$response_test_2_after"
+          if test "$response_test_2_after" != "$response_test_latest"; then
+            echo "failed asserting version.json after update for git-deploy-scripts-testinghelper-2"
+            exit 206
+          fi
 
 
           cd "$initial_directory_path"

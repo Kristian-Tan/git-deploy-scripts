@@ -116,7 +116,7 @@ fi
 verbose_output "parsing ssh options"
 options_for_ssh_string=""
 for val in "${options_for_ssh[@]}"; do
-    options_for_ssh_string="$options_for_ssh_string -o '$val'"
+    options_for_ssh_string="$options_for_ssh_string -o $val"
 done
 verbose_output "ssh options: \"$options_for_ssh_string\""
 
@@ -166,7 +166,7 @@ git pull $name_of_remote_git $branch_target
 
 if test $configure_receive_denycurrentbranch_updateinstead -eq 1; then
   verbose_output "configuring production git repository to allow it to receive 'git push'"
-  verbose_output "  \$ ssh $server_ssh_destination -t \"cd $directory_in_deployment_server ; git config receive.denyCurrentBranch updateInstead ; cat .git/config | grep denyCurrentBranch\""
+  verbose_output "  \$ ssh $options_for_ssh_string $server_ssh_destination -t \"cd $directory_in_deployment_server ; git config receive.denyCurrentBranch updateInstead ; cat .git/config | grep denyCurrentBranch\""
   ssh $options_for_ssh_string $server_ssh_destination -t "cd $directory_in_deployment_server ; git config receive.denyCurrentBranch updateInstead ; cat .git/config | grep denyCurrentBranch"
 fi
 
