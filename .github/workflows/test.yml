@@ -45,8 +45,8 @@ jobs:
           git-deploy-sshpull -h
 
           cd "$initial_directory_path"
-          echo "uninstalling from /bin (default location if not set)"
-          sudo sh uninstall.sh
+          echo "uninstalling with one-line curl"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Kristian-Tan/git-deploy-scripts/HEAD/remove)"
 
           echo "installing to /bin (default location if not set)"
           echo "after installation, scripts will be called directly (not with ./filename but filename)"
