@@ -155,51 +155,14 @@ jobs:
             echo "failed asserting version.json for git-deploy-scripts-testinghelper-6"
             exit 206
           fi
-
-          echo "test case 5: git-deploy-sshfs"
-          mkdir "/tmp/mytest/git-deploy-scripts-testinghelper-5-temp"
-          cd "/tmp/mytest/git-deploy-scripts-testinghelper-5"
-          sudo git-deploy-sshfs -s kristian@127.0.0.1 -d /var/www/app/public_html/git-deploy-scripts-testinghelper-5 -m "/tmp/mytest/git-deploy-scripts-testinghelper-5-temp" -o IdentityFile=~/.ssh/id_rsa -o port=2222 -o reconnect -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o ssh_command=ssh\\040-o\\040StrictHostKeyChecking=no -w 0 -v
-
-          response_test_5_after=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-5/version.json`
-          echo "$response_test_5_after"
-          if test "$response_test_5_after" != "$response_test_latest"; then
-            echo "failed asserting version.json after update for git-deploy-scripts-testinghelper-5"
-            exit 206
-          fi
-
-          echo "test case 6: git-deploy-sshfs without local repository"
-          mkdir "/tmp/mytest/git-deploy-scripts-testinghelper-6-temp"
-          sudo git-deploy-sshfs -s kristian@127.0.0.1 -d /var/www/app/public_html/git-deploy-scripts-testinghelper-6 -m "/tmp/mytest/git-deploy-scripts-testinghelper-6-temp" -o IdentityFile=~/.ssh/id_rsa -o port=2222 -o reconnect -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o ssh_command=ssh\\040-o\\040StrictHostKeyChecking=no -w 0 -v -n https://github.com/Kristian-Tan/git-deploy-scripts-testinghelper.git
-
-          response_test_6_after=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-6/version.json`
-          echo "$response_test_6_after"
-          if test "$response_test_6_after" != "$response_test_latest"; then
-            echo "failed asserting version.json after update for git-deploy-scripts-testinghelper-6"
-            exit 206
-          fi
-
-          echo "test case 3: git-deploy-sshpull"
-          cd "/tmp/mytest/git-deploy-scripts-testinghelper-3"
-          git-deploy-sshpull -s kristian@127.0.0.1 -d /var/www/app/public_html/git-deploy-scripts-testinghelper-3 -c -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa -o Port=2222 -w 0 -v
-
-          response_test_3_after=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-3/version.json`
-          echo "$response_test_3_after"
-          if test "$response_test_3_after" != "$response_test_latest"; then
-            echo "failed asserting version.json after update for git-deploy-scripts-testinghelper-3"
-            exit 206
-          fi
-
-          echo "test case 4: git-deploy-sshpull without local repository"
-          mkdir "/tmp/mytest/git-deploy-scripts-testinghelper-4-temp"
-          cd "/tmp/mytest/git-deploy-scripts-testinghelper-4-temp"
-          git-deploy-sshpull -s kristian@127.0.0.1 -d /var/www/app/public_html/git-deploy-scripts-testinghelper-4 -c -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa -o Port=2222 -w 0 -v -n https://github.com/Kristian-Tan/git-deploy-scripts-testinghelper.git
-
-          response_test_4_after=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-4/version.json`
-          echo "$response_test_4_after"
-          if test "$response_test_4_after" != "$response_test_latest"; then
-            echo "failed asserting version.json after update for git-deploy-scripts-testinghelper-4"
-            exit 206
+          
+          cp -r git-deploy-scripts-testinghelper git-deploy-scripts-testinghelper-7
+          scp -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa -o Port=2222 -r git-deploy-scripts-testinghelper kristian@127.0.0.1:/var/www/app/public_html/git-deploy-scripts-testinghelper-7
+          response_test_7=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-7/version.json`
+          echo "$response_test_7"
+          if test "$response_test_7" != "$response_test_outdated"; then
+            echo "failed asserting version.json for git-deploy-scripts-testinghelper-7"
+            exit 207
           fi
 
           echo "test case 1: git-deploy-push with local repository"
@@ -228,6 +191,103 @@ jobs:
           echo "$response_test_2_after"
           if test "$response_test_2_after" != "$response_test_latest"; then
             echo "failed asserting version.json after update for git-deploy-scripts-testinghelper-2"
+            exit 206
+          fi
+
+          echo "test case 3: git-deploy-sshpull"
+          cd "/tmp/mytest/git-deploy-scripts-testinghelper-3"
+          git-deploy-sshpull -s kristian@127.0.0.1 -d /var/www/app/public_html/git-deploy-scripts-testinghelper-3 -c -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa -o Port=2222 -w 0 -v
+
+          response_test_3_after=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-3/version.json`
+          echo "$response_test_3_after"
+          if test "$response_test_3_after" != "$response_test_latest"; then
+            echo "failed asserting version.json after update for git-deploy-scripts-testinghelper-3"
+            exit 206
+          fi
+
+          echo "test case 4: git-deploy-sshpull without local repository"
+          mkdir "/tmp/mytest/git-deploy-scripts-testinghelper-4-temp"
+          cd "/tmp/mytest/git-deploy-scripts-testinghelper-4-temp"
+          git-deploy-sshpull -s kristian@127.0.0.1 -d /var/www/app/public_html/git-deploy-scripts-testinghelper-4 -c -o StrictHostKeyChecking=no -o IdentityFile=~/.ssh/id_rsa -o Port=2222 -w 0 -v -n https://github.com/Kristian-Tan/git-deploy-scripts-testinghelper.git
+
+          response_test_4_after=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-4/version.json`
+          echo "$response_test_4_after"
+          if test "$response_test_4_after" != "$response_test_latest"; then
+            echo "failed asserting version.json after update for git-deploy-scripts-testinghelper-4"
+            exit 206
+          fi
+
+          echo "test case 5: git-deploy-sshfs"
+          mkdir "/tmp/mytest/git-deploy-scripts-testinghelper-5-temp"
+          cd "/tmp/mytest/git-deploy-scripts-testinghelper-5"
+          sudo git-deploy-sshfs -s kristian@127.0.0.1 -d /var/www/app/public_html/git-deploy-scripts-testinghelper-5 -m "/tmp/mytest/git-deploy-scripts-testinghelper-5-temp" -o IdentityFile=~/.ssh/id_rsa -o port=2222 -o reconnect -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o ssh_command=ssh\\040-o\\040StrictHostKeyChecking=no -w 0 -v
+
+          response_test_5_after=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-5/version.json`
+          echo "$response_test_5_after"
+          if test "$response_test_5_after" != "$response_test_latest"; then
+            echo "failed asserting version.json after update for git-deploy-scripts-testinghelper-5"
+            exit 206
+          fi
+
+          echo "test case 6: git-deploy-sshfs without local repository"
+          mkdir "/tmp/mytest/git-deploy-scripts-testinghelper-6-temp"
+          cd "/tmp/mytest/git-deploy-scripts-testinghelper-6-temp"
+          sudo git-deploy-sshfs -s kristian@127.0.0.1 -d /var/www/app/public_html/git-deploy-scripts-testinghelper-6 -m "/tmp/mytest/git-deploy-scripts-testinghelper-6-temp" -o IdentityFile=~/.ssh/id_rsa -o port=2222 -o reconnect -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o ssh_command=ssh\\040-o\\040StrictHostKeyChecking=no -w 0 -v -n https://github.com/Kristian-Tan/git-deploy-scripts-testinghelper.git
+
+          response_test_6_after=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-6/version.json`
+          echo "$response_test_6_after"
+          if test "$response_test_6_after" != "$response_test_latest"; then
+            echo "failed asserting version.json after update for git-deploy-scripts-testinghelper-6"
+            exit 206
+          fi
+
+          echo "test case 7: git-deploy-sshfs without mountpoint without local repository"
+          mkdir "/tmp/mytest/git-deploy-scripts-testinghelper-7-temp"
+          cd "/tmp/mytest/git-deploy-scripts-testinghelper-7-temp"
+          sudo git-deploy-sshfs -s kristian@127.0.0.1 -d /var/www/app/public_html/git-deploy-scripts-testinghelper-7 -o IdentityFile=~/.ssh/id_rsa -o port=2222 -o reconnect -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o ssh_command=ssh\\040-o\\040StrictHostKeyChecking=no -w 0 -v
+
+          response_test_7_after=`curl http://127.0.0.1:8080/git-deploy-scripts-testinghelper-7/version.json`
+          echo "$response_test_7_after"
+          if test "$response_test_7_after" != "$response_test_latest"; then
+            echo "failed asserting version.json after update for git-deploy-scripts-testinghelper-7"
+            exit 206
+          fi
+
+          echo "test case 8: git-deploy-sshfs cleanup if something didn't go well"
+          mkdir "/tmp/mytest/git-deploy-scripts-testinghelper-8-temp"
+          cd "/tmp/mytest/git-deploy-scripts-testinghelper-8-temp"
+          error_code="empty"
+          sudo git-deploy-sshfs -s kristian@127.0.0.1 -d /var/www/app/public_html/git-deploy-scripts-testinghelper-8-nonexistent -o IdentityFile=~/.ssh/id_rsa -o port=2222 -o reconnect -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o ssh_command=ssh\\040-o\\040StrictHostKeyChecking=no -w 0 -v -m /tmp/mymountpoint || error_code=$?
+
+          if test "$error_code" == "empty"; then
+            echo "error: not returning non-zero error code when error is expected"
+            exit 206
+          fi
+          if test -d /tmp/mymountpoint ; then
+            echo "failed asserting cleanup delete directory on error for git-deploy-scripts-testinghelper-8"
+            exit 206
+          fi
+          if test "`mount | grep /tmp/mymountpoint`" != "" ; then
+            echo "failed asserting unmounting sshfs for git-deploy-scripts-testinghelper-8"
+            exit 206
+          fi
+
+          echo "test case 9: git-deploy-sshfs cleanup if something didn't go well"
+          mkdir "/tmp/mytest/git-deploy-scripts-testinghelper-9-temp"
+          cd "/tmp/mytest/git-deploy-scripts-testinghelper-9-temp"
+          error_code="empty"
+          sudo git-deploy-sshfs -s kristian@127.0.0.1 -d /home/kristian -o IdentityFile=~/.ssh/id_rsa -o port=2222 -o reconnect -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o ssh_command=ssh\\040-o\\040StrictHostKeyChecking=no -w 0 -v -m /tmp/mymountpoint1 || error_code=$?
+
+          if test "$error_code" == "empty"; then
+            echo "error: not returning non-zero error code when error is expected"
+            exit 206
+          fi
+          if test -d /tmp/mymountpoint1 ; then
+            echo "failed asserting cleanup delete directory on error for git-deploy-scripts-testinghelper-9"
+            exit 206
+          fi
+          if test "`mount | grep /tmp/mymountpoint1`" != "" ; then
+            echo "failed asserting unmounting sshfs for git-deploy-scripts-testinghelper-9"
             exit 206
           fi
 

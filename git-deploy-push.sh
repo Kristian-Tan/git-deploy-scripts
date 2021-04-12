@@ -21,13 +21,22 @@ force_flag=0
 name_of_remote_git="origin"
 branch_target="master"
 configure_receive_denycurrentbranch_updateinstead=0
+pre_command_1=""
+pre_command_2=""
+pre_command_3=""
+pre_command_4=""
+pre_command_5=""
+post_command_6=""
+post_command_7=""
+post_command_8=""
+post_command_9=""
 #x_resethead_after=""
 options_for_ssh=() # array, see https://stackoverflow.com/a/20761893/3706717
 wait_seconds=5
 verbose=0
 
 # read arguments from getopts https://wiki.bash-hackers.org/howto/getopts_tutorial https://stackoverflow.com/a/14203146/3706717
-while getopts "hs:d:t:r:fn:b:co:w:v" opt; do
+while getopts "hs:d:t:r:fn:b:c1:2:3:4:5:6:7:8:9:o:w:v" opt; do
     case "$opt" in
     h)
         cat << EOF
@@ -64,6 +73,10 @@ example 2: -s produser@production.server.com -d /home/vhost/myapp -t /tmp/myapp-
   (-c) configure production git repository to allow it to receive 'git push', need git 2.4.0 (2014) or newer
   (-w) wait for 0 seconds (do it immediately)
   (-v) verbose output on
+additional command:
+  -1 'command here' -2 'command here' ... -9 'command here' 
+  commands from -1 to -5 will be executed before the pull, while commands from -6 to -9 will be executed after the pull 
+  those commands will be executed in remote deployment server (for example: to define http_proxy before pulling, to apply permission with chmod after pulling)
 EOF
         exit 0
         ;;
@@ -82,6 +95,24 @@ EOF
     b)  branch_target=$OPTARG
         ;;
     c)  configure_receive_denycurrentbranch_updateinstead=1
+        ;;
+    1)  pre_command_1=$OPTARG
+        ;;
+    2)  pre_command_2=$OPTARG
+        ;;
+    3)  pre_command_3=$OPTARG
+        ;;
+    4)  pre_command_4=$OPTARG
+        ;;
+    5)  pre_command_5=$OPTARG
+        ;;
+    6)  post_command_6=$OPTARG
+        ;;
+    7)  post_command_7=$OPTARG
+        ;;
+    8)  post_command_8=$OPTARG
+        ;;
+    9)  post_command_9=$OPTARG
         ;;
     #x)  x_resethead_after=" git reset --hard HEAD ; "
     #    ;;
@@ -122,6 +153,35 @@ if test ! -d "$target_repository"; then
   echo ">>> mkdir '$target_repository'"
   exit 3
 fi
+if test "$pre_command_1" != ""; then
+  pre_command_1=" $pre_command_1 ; "
+fi
+if test "$pre_command_2" != ""; then
+  pre_command_2=" $pre_command_2 ; "
+fi
+if test "$pre_command_3" != ""; then
+  pre_command_3=" $pre_command_3 ; "
+fi
+if test "$pre_command_4" != ""; then
+  pre_command_4=" $pre_command_4 ; "
+fi
+if test "$pre_command_5" != ""; then
+  pre_command_5=" $pre_command_5 ; "
+fi
+if test "$post_command_6" != ""; then
+  post_command_6=" $post_command_6 ; "
+fi
+if test "$post_command_7" != ""; then
+  post_command_7=" $post_command_7 ; "
+fi
+if test "$post_command_8" != ""; then
+  post_command_8=" $post_command_8 ; "
+fi
+if test "$post_command_9" != ""; then
+  post_command_9=" $post_command_9 ; "
+fi
+pre_commands="$pre_command_1$pre_command_2$pre_command_3$pre_command_4$pre_command_5"
+post_commands="$post_command_6$post_command_7$post_command_8$post_command_9"
 
 verbose_output "parsing ssh options"
 options_for_ssh_string=""
@@ -180,6 +240,11 @@ if test $configure_receive_denycurrentbranch_updateinstead -eq 1; then
   ssh $options_for_ssh_string $server_ssh_destination -t "cd $directory_in_deployment_server ; git config receive.denyCurrentBranch updateInstead ; cat .git/config | grep denyCurrentBranch"
 fi
 
+if test "$pre_commands" != ""; then
+  verbose_output "executing pre_commands: $pre_commands"
+  ssh $options_for_ssh_string $server_ssh_destination -t "cd $directory_in_deployment_server ; $pre_commands"
+fi
+
 if test $force_flag -eq 0; then
   verbose_output "pushing to deployment server"
   verbose_output "  \$ git push $server_ssh_destination:$directory_in_deployment_server $branch_target"
@@ -189,3 +254,9 @@ else
   verbose_output "  \$ git push --force $server_ssh_destination:$directory_in_deployment_server $branch_target"
   git push --force $server_ssh_destination:$directory_in_deployment_server $branch_target
 fi
+
+if test "$post_commands" != ""; then
+  verbose_output "executing post_commands: $post_commands"
+  ssh $options_for_ssh_string $server_ssh_destination -t "cd $directory_in_deployment_server ; $post_commands"
+fi
+

@@ -142,6 +142,8 @@ fi
 if test "$post_command_9" != ""; then
   post_command_9=" $post_command_9 ; "
 fi
+pre_commands="$pre_command_1$pre_command_2$pre_command_3$pre_command_4$pre_command_5"
+post_commands="$post_command_6$post_command_7$post_command_8$post_command_9"
 
 verbose_output "parsing ssh options"
 options_for_ssh_string=""
@@ -162,5 +164,5 @@ sleep $wait_seconds
 echo ">>> executing..."
 
 verbose_output "executing ssh command"
-verbose_output "  \$ ssh $options_for_ssh_string $server_ssh_destination -t \"$pre_command_1$pre_command_2$pre_command_3$pre_command_4$pre_command_5 cd $directory_in_deployment_server ; git pull $name_of_remote_git $branch_target ; $post_command_6$post_command_7$post_command_8$post_command_9$x_resethead_after\""
-ssh $options_for_ssh_string $server_ssh_destination -t "$pre_command_1$pre_command_2$pre_command_3$pre_command_4$pre_command_5 cd $directory_in_deployment_server ; git pull $name_of_remote_git $branch_target ; $post_command_6$post_command_7$post_command_8$post_command_9$x_resethead_after"
+verbose_output "  \$ ssh $options_for_ssh_string $server_ssh_destination -t \"$pre_commands cd $directory_in_deployment_server ; git pull $name_of_remote_git $branch_target ; $post_commands $x_resethead_after\""
+ssh $options_for_ssh_string $server_ssh_destination -t "$pre_commands cd $directory_in_deployment_server ; git pull $name_of_remote_git $branch_target ; $post_commands $x_resethead_after"
